@@ -24,5 +24,10 @@ resource "talos_cluster_kubeconfig" "kubeconfig" {
 
 resource "local_file" "kubeconfig" {
   content  = talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
-  filename = "${path.module}/kubeconfig"
+  filename = "${path.module}/configs/kubeconfig"
+}
+
+resource "local_file" "talosconfig" {
+  content  = data.talos_client_configuration.talosconfig.talos_config
+  filename = "${path.module}/configs//talosconfig"
 }

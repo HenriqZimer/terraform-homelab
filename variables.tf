@@ -16,23 +16,6 @@ variable "pm_api_token_secret" {
 }
 
 ####### Configurações do Talos #######
-variable "cloudflare_tunnel_token" {
-  type        = string
-  description = "Token do Tunnel do Cloudflare"
-  sensitive   = true
-}
-
-variable "tailscale_auth_key" {
-  type        = string
-  description = "Auth Key do Tailscale para registrar o nó"
-  sensitive   = true
-}
-
-variable "talos_installer_image" {
-  type        = string
-  description = "Imagem customizada do instalador do Talos gerada no Image Factory"
-}
-
 variable "talos_version" {
   type        = string
   default     = "v1.13.2"
