@@ -18,7 +18,7 @@ format:
 init:
 	terraform init
 
-deploy: init validate plan apply
+deploy: init validate plan apply merge-talosconfig merge-kubeconfig
 
 merge-talosconfig:
 	talosctl config merge ./configs/talosconfig
