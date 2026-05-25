@@ -41,13 +41,13 @@ variable "talos_version" {
 
 ####### Configurações de Cluster e Rede #######
 variable "network_gateway" {
-  type = string
+  type        = string
+  description = "Gateway da rede onde as VMs serão criadas."
 }
 
-variable "controlplane_ips" {
-  type        = list(string)
-  default     = []
-  description = "Lista de IPs estáticos para os Control Planes"
+variable "controlplane_ip" {
+  type        = string
+  description = "IP estático para o Control Plane"
 }
 
 variable "controlplane_count" {
@@ -79,7 +79,6 @@ variable "cluster_name" {
 
 variable "cluster_endpoint" {
   type        = string
-  default     = ""
   description = "Endpoint da API do Kubernetes (VIP ou IP do primeiro control plane)."
 }
 

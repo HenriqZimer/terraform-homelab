@@ -27,10 +27,9 @@ resource "proxmox_vm_qemu" "worker" {
   }
 
   network {
-    id     = 0
-    model  = "virtio"
-    bridge = var.vm_bridge
-    # MAC Fixo para os Workers (Terminando em 20, 21, 22...)
+    id      = 0
+    model   = "virtio"
+    bridge  = var.vm_bridge
     macaddr = "BE:EF:00:00:02:2${count.index}"
   }
 
@@ -38,23 +37,27 @@ resource "proxmox_vm_qemu" "worker" {
     create = "2m"
   }
 
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
-# 3. Configuração Dinâmica do Worker (Deixe APENAS esta versão)
 data "talos_machine_configuration" "worker" {
+  count            = var.worker_count
   cluster_name     = var.cluster_name
-  cluster_endpoint = "https://192.168.1.200:6443"
+  cluster_endpoint = var.cluster_endpoint
   machine_type     = "worker"
   machine_secrets  = talos_machine_secrets.cluster_secrets.machine_secrets
   talos_version    = var.talos_version
+
 }
 
 resource "talos_machine_configuration_apply" "worker" {
-  count                       = var.worker_count
-  client_configuration        = talos_machine_secrets.cluster_secrets.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
+  count                = var.worker_count
+  client_configuration = talos_machine_secrets.cluster_secrets.client_configuration
 
-  # ADICIONE A DEPENDÊNCIA: Só envia a configuração DEPOIS que o Worker existir
+  machine_configuration_input = data.talos_machine_configuration.worker[count.index].machine_configuration
+
   depends_on = [proxmox_vm_qemu.worker]
 
   node     = "192.168.1.${220 + count.index}"
