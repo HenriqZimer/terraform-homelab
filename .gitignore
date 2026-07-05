@@ -1,7 +1,9 @@
 *.tfstate
 *.tfstate.backup
+*.tfstate.*.backup
 .terraform/
 terraform.tfvars
 .terraform.lock.hcl
 /configs
 .terraform.tfstate.lock.info
+.envrc

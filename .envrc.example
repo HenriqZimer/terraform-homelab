@@ -1,0 +1,28 @@
+# Copie este arquivo para .envrc (ja no .gitignore, nunca sera commitado) e
+# preencha os valores reais. Depois rode `direnv allow` nesta pasta para que
+# o direnv exporte essas variaveis automaticamente sempre que voce entrar em
+# terraform-homelab/ - nenhum segredo fica salvo em disco em texto puro fora
+# deste arquivo local.
+#
+# Instalacao do direnv: https://direnv.net/docs/installation.html
+# Depois de instalar, adicione o hook do direnv ao seu shell (.bashrc/.zshrc):
+#   eval "$(direnv hook bash)"   # ou zsh, conforme seu shell
+
+# Secret do token de API do Proxmox (Datacenter > Permissions > API Tokens).
+export TF_VAR_pm_api_token_secret="00000000-0000-0000-0000-000000000000"
+
+# Tailscale: use UM dos dois formatos abaixo (o codigo detecta o prefixo
+# automaticamente e ajusta o comportamento).
+#
+# Opcao A - auth key normal (Settings > Keys > Generate auth key): marque
+# "Reusable" e escolha as tags desejadas na propria tela de criacao. Simples,
+# mas se esquecer de marcar "Reusable" a key so funciona no primeiro node.
+export TF_VAR_tailscale_auth_key="tskey-auth-XXXXXXXXXXXXX-YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+#
+# Opcao B - OAuth client secret (Settings > OAuth clients): sempre reusavel,
+# mas exige que TF_VAR_tailscale_tags (variables.tf/terraform.tfvars) tenha as
+# mesmas tags configuradas no OAuth client, senao falha com 403.
+# export TF_VAR_tailscale_auth_key="tskey-client-XXXXXXXXXXXXX-YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+
+# Token do Cloudflare Tunnel (Zero Trust > Networks > Tunnels > seu tunnel).
+export TF_VAR_cloudflared_tunnel_token=""
