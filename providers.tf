@@ -8,7 +8,7 @@ terraform {
     }
     talos = {
       source  = "siderolabs/talos"
-      version = "0.12.0-alpha.1"
+      version = "~> 0.11.0"
     }
     local = {
       source  = "hashicorp/local"
