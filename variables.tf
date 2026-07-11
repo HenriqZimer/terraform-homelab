@@ -137,6 +137,12 @@ variable "talos_network_interface" {
   description = "Interface de rede configurada estaticamente no Talos."
 }
 
+variable "talos_network_mtu" {
+  type        = number
+  default     = 1500
+  description = "MTU da interface de rede dos nodes Talos. Reduza (ex: 1492) se o link WAN usar PPPoE ou outro encapsulamento que reduza o MTU efetivo abaixo de 1500 - sem isso, pacotes grandes com DF set podem cair em um PMTU blackhole (handshakes pequenos funcionam, pulls de imagem grandes travam com connection reset) quando o ICMP 'fragmentation needed' do gateway nao chega de volta ate a VM."
+}
+
 variable "controlplane_ip" {
   type        = string
   default     = null

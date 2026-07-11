@@ -154,6 +154,7 @@ locals {
                 interface = var.talos_network_interface
                 dhcp      = false
                 addresses = ["${node.ip}/${var.network_prefix_length}"]
+                mtu       = var.talos_network_mtu
                 routes = [{
                   network = "0.0.0.0/0"
                   gateway = var.network_gateway
@@ -179,6 +180,7 @@ locals {
               interface = var.talos_network_interface
               dhcp      = false
               addresses = ["${node.ip}/${var.network_prefix_length}"]
+              mtu       = var.talos_network_mtu
               routes = [{
                 network = "0.0.0.0/0"
                 gateway = var.network_gateway
