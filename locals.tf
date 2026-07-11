@@ -107,7 +107,7 @@ locals {
           "TS_AUTH_ONCE=${var.tailscale_auth_once}",
         ])
       }) : "",
-      coalesce(local.cloudflared_patch, ""),
+      local.cloudflared_patch != null ? local.cloudflared_patch : "",
     ])
   }
 
