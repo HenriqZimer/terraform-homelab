@@ -13,9 +13,19 @@ resource "terraform_data" "wait_for_worker_node" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<-EOT
-      set -euo pipefail
-      kubectl --kubeconfig '${local_file.kubeconfig.filename}' \
-        wait --for=create "node/${each.value.hostname}" --timeout=600s
+      set -uo pipefail
+      # kubectl wait --for=create sai no primeiro erro de conexao (API
+      # indisponivel), sem tolerar o control plane cair/reiniciar durante o
+      # bootstrap. Faz polling manual para sobreviver a essas janelas.
+      deadline=$((SECONDS + 600))
+      until kubectl --kubeconfig '${local_file.kubeconfig.filename}' \
+        get "node/${each.value.hostname}" >/dev/null 2>&1; do
+        if [ "$SECONDS" -ge "$deadline" ]; then
+          echo "timeout esperando node/${each.value.hostname} aparecer na API" >&2
+          exit 1
+        fi
+        sleep 5
+      done
     EOT
   }
 
