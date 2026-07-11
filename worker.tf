@@ -108,6 +108,9 @@ resource "terraform_data" "wait_for_worker_apid" {
   depends_on = [proxmox_vm_qemu.worker]
 }
 
+# Serializado atras de wait_for_controlplane_api (ver comentario em main.tf):
+# so aplica config nos workers - o que dispara o pull da imagem do kubelet
+# de cada um - depois que o control plane ja terminou de puxar as dele.
 resource "talos_machine_configuration_apply" "worker" {
   for_each             = local.worker_nodes
   client_configuration = talos_machine_secrets.cluster_secrets.client_configuration
@@ -120,7 +123,7 @@ resource "talos_machine_configuration_apply" "worker" {
   )
   apply_mode = "staged_if_needing_reboot"
 
-  depends_on = [terraform_data.wait_for_worker_apid]
+  depends_on = [terraform_data.wait_for_worker_apid, terraform_data.wait_for_controlplane_api]
 
   node     = local.worker_apply_endpoint[each.key]
   endpoint = local.worker_apply_endpoint[each.key]

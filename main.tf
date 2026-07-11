@@ -28,6 +28,39 @@ resource "talos_cluster_kubeconfig" "kubeconfig" {
   client_configuration = talos_machine_secrets.cluster_secrets.client_configuration
 }
 
+# O bootstrap so exige que o apid do Talos responda (servico nativo do OS),
+# nao que o kube-apiserver ja esteja rodando - kubelet/etcd/kube-apiserver
+# sao imagens containerd separadas, ainda por puxar nesse ponto. Se os
+# workers comecarem a aplicar config (e portanto a puxar a propria imagem do
+# kubelet) ao mesmo tempo que o control plane ainda esta puxando as dele, os
+# dois pulls concorrem pelo mesmo link WAN - em links limitados isso pode
+# levar timeouts de TLS que nao acontecem testando um node por vez. Espera o
+# kube-apiserver do control plane responder antes de liberar os workers,
+# serializando a etapa mais pesada de rede.
+resource "terraform_data" "wait_for_controlplane_api" {
+  triggers_replace = {
+    bootstrap = talos_machine_bootstrap.bootstrap.id
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+      set -uo pipefail
+      node="${local.controlplane_ip}"
+      deadline=$((SECONDS + 1200))
+      until timeout 3 bash -c "echo >/dev/tcp/$node/6443" 2>/dev/null; do
+        if [ "$SECONDS" -ge "$deadline" ]; then
+          echo "timeout esperando kube-apiserver em $node:6443" >&2
+          exit 1
+        fi
+        sleep 5
+      done
+    EOT
+  }
+
+  depends_on = [talos_machine_bootstrap.bootstrap]
+}
+
 resource "local_file" "kubeconfig" {
   content  = talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
   filename = "${path.module}/configs/kubeconfig"
