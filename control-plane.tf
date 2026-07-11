@@ -72,6 +72,38 @@ data "talos_machine_configuration" "controlplane" {
   talos_version    = var.talos_version
 }
 
+# O provider Proxmox so garante que o QEMU Guest Agent respondeu, ou seja,
+# que o SO subiu - nao que o apid do Talos (porta 50000) ja esta escutando.
+# Sem esperar isso explicitamente, o primeiro talos_machine_configuration_apply
+# pode tentar falar com o node antes da hora ("no route to host"/"connection
+# refused"), o que nao acontece numa aplicacao manual porque a pessoa so roda
+# talosctl depois de ver o node acessivel.
+resource "terraform_data" "wait_for_controlplane_apid" {
+  for_each = local.controlplane_nodes
+
+  triggers_replace = {
+    vmid = proxmox_vm_qemu.controlplane[each.key].vmid
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+      set -uo pipefail
+      node="${local.controlplane_apply_endpoint[each.key]}"
+      deadline=$((SECONDS + 300))
+      until timeout 3 bash -c "echo >/dev/tcp/$node/50000" 2>/dev/null; do
+        if [ "$SECONDS" -ge "$deadline" ]; then
+          echo "timeout esperando apid (porta 50000) em $node" >&2
+          exit 1
+        fi
+        sleep 5
+      done
+    EOT
+  }
+
+  depends_on = [proxmox_vm_qemu.controlplane]
+}
+
 resource "talos_machine_configuration_apply" "controlplane" {
   for_each                    = local.controlplane_nodes
   client_configuration        = talos_machine_secrets.cluster_secrets.client_configuration
@@ -83,8 +115,8 @@ resource "talos_machine_configuration_apply" "controlplane" {
   )
   apply_mode = "staged_if_needing_reboot"
 
-  depends_on = [proxmox_vm_qemu.controlplane]
+  depends_on = [terraform_data.wait_for_controlplane_apid]
 
-  node     = coalesce(each.value.bootstrap_ip, proxmox_vm_qemu.controlplane[each.key].default_ipv4_address, each.value.ip)
-  endpoint = coalesce(each.value.bootstrap_ip, proxmox_vm_qemu.controlplane[each.key].default_ipv4_address, each.value.ip)
+  node     = local.controlplane_apply_endpoint[each.key]
+  endpoint = local.controlplane_apply_endpoint[each.key]
 }

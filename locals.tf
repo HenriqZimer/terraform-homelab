@@ -209,4 +209,25 @@ locals {
       )
     })
   }
+
+  # Endereco usado para o primeiro contato com cada node via apid. So existe
+  # depois que a VM Proxmox e criada (default_ipv4_address vem do QEMU Guest
+  # Agent, que so confirma o SO de pe - nao que o apid do Talos ja esteja
+  # escutando). Centralizado aqui porque e usado tanto no wait de apid quanto
+  # no proprio talos_machine_configuration_apply.
+  controlplane_apply_endpoint = {
+    for hostname, node in local.controlplane_nodes : hostname => coalesce(
+      node.bootstrap_ip,
+      proxmox_vm_qemu.controlplane[hostname].default_ipv4_address,
+      node.ip,
+    )
+  }
+
+  worker_apply_endpoint = {
+    for hostname, node in local.worker_nodes : hostname => coalesce(
+      node.bootstrap_ip,
+      proxmox_vm_qemu.worker[hostname].default_ipv4_address,
+      node.ip,
+    )
+  }
 }

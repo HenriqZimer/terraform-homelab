@@ -17,7 +17,7 @@ resource "terraform_data" "wait_for_worker_node" {
       # kubectl wait --for=create sai no primeiro erro de conexao (API
       # indisponivel), sem tolerar o control plane cair/reiniciar durante o
       # bootstrap. Faz polling manual para sobreviver a essas janelas.
-      deadline=$((SECONDS + 600))
+      deadline=$((SECONDS + 1200))
       until kubectl --kubeconfig '${local_file.kubeconfig.filename}' \
         get "node/${each.value.hostname}" >/dev/null 2>&1; do
         if [ "$SECONDS" -ge "$deadline" ]; then
