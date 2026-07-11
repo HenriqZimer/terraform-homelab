@@ -113,10 +113,26 @@ locals {
 
   # Necessario nos nodes que anunciam TS_ROUTES: sem ip_forward=1 o kernel
   # descarta o trafego que o tailscaled tentaria rotear para a LAN.
-  tailscale_subnet_router_sysctls = length(var.tailscale_routes) > 0 ? {
-    sysctls = {
-      "net.ipv4.ip_forward" = "1"
-    }
+  ip_forward_sysctls = length(var.tailscale_routes) > 0 ? {
+    "net.ipv4.ip_forward" = "1"
+  } : {}
+
+  # Em redes sem IPv6 real (so rota/endereco parcial via RA, sem saida de
+  # fato), o containerd tenta a resposta AAAA de registries dual-stack
+  # (registry.k8s.io, *.pkg.dev) antes de cair para IPv4, e essa tentativa
+  # trava ate estourar o timeout do TLS handshake em vez de falhar rapido -
+  # isso multiplica o tempo de cada pull de imagem e pode nunca completar
+  # dentro do timeout do bootstrap. Desabilitar IPv6 no kernel evita que o
+  # node sequer tente essa rota.
+  ipv6_disable_sysctls = var.talos_disable_ipv6 ? {
+    "net.ipv6.conf.all.disable_ipv6"     = "1"
+    "net.ipv6.conf.default.disable_ipv6" = "1"
+  } : {}
+
+  machine_sysctls = merge(local.ip_forward_sysctls, local.ipv6_disable_sysctls)
+
+  machine_sysctls_patch = length(local.machine_sysctls) > 0 ? {
+    sysctls = local.machine_sysctls
   } : {}
 
   # Sem isso, o Talos pode registrar o node no Kubernetes com o IP de outra
@@ -165,7 +181,7 @@ locals {
           }
         },
         local.kubelet_machine_config[hostname],
-        local.tailscale_subnet_router_sysctls,
+        local.machine_sysctls_patch,
       )
     })
   }
@@ -189,7 +205,7 @@ locals {
           }
         },
         local.kubelet_machine_config[hostname],
-        local.tailscale_subnet_router_sysctls,
+        local.machine_sysctls_patch,
       )
     })
   }

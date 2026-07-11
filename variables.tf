@@ -137,6 +137,12 @@ variable "talos_network_interface" {
   description = "Interface de rede configurada estaticamente no Talos."
 }
 
+variable "talos_disable_ipv6" {
+  type        = bool
+  default     = false
+  description = "Desabilita IPv6 via sysctl nos nodes Talos. Ative em redes sem IPv6 real: sem isso, o containerd pode tentar o registro AAAA de registries dual-stack (registry.k8s.io, *.pkg.dev) e travar ate o timeout do TLS handshake antes de cair para IPv4, tornando pulls de imagem lentos ou instaveis."
+}
+
 variable "talos_network_mtu" {
   type        = number
   default     = 1500
